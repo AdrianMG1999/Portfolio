@@ -414,9 +414,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 'use strict';
 
 // ─── PORTFOLIO DATA ──────────────────────────────────────────────────────────
-// Precio promedio MXN: precio al que compraste convertido a MXN en su momento
-// Acciones: cantidad de acciones que tienes
-// Para el Costo MXN: precio_promedio_MXN × cantidad
 const ACCIONES = [
   { id:'adbe', ticker:'ADBE', nombre:'Adobe',           qty:6,  avgMXN:6736.52, tbClass:'tb-r', target:'$339.88 USD', upside:'+33%', earnings:'11/Jun/2026', rec:'Hold · buyback $25B 🆕' },
   { id:'amzn', ticker:'AMZN', nombre:'Amazon',          qty:3,  avgMXN:3590.00, tbClass:'tb-g', target:'~$260 USD',   upside:'~+14%',earnings:'01/May/2026 🔥',rec:'Hold' },
@@ -441,12 +438,12 @@ const CRYPTO_HOLDINGS = [
   { id:'xrp', coinId:'ripple',   symbol:'XRP', nombre:'XRP',          qty:11.760269,  buyUSD:1.31,     costoMXN:267.29,   tbStyle:'background:var(--neutral-bg);color:var(--text2)',extra:'' },
 ];
 const MXN_CASH     = 5006.13;
-const CRYPTO_COSTO = 36203.48; // suma de todos los costoMXN + MXN_CASH no tiene costo
+const CRYPTO_COSTO = 36203.48;
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
-let TC          = null;   // tipo de cambio USD→MXN
-let accPrices   = {};     // { TICKER: priceUSD }
-let cryptoPrices= {};     // { coinId: priceUSD }
+let TC          = null;
+let accPrices   = {};
+let cryptoPrices= {};
 let lastAccTS   = null;
 let lastCryTS   = null;
 let accStale    = false;
@@ -499,20 +496,18 @@ function startCountdown(secs, elId, onDone){
 }
 
 // ─── CORS PROXY HELPER ───────────────────────────────────────────────────────
-// allorigins.win reenvía cualquier URL con headers CORS correctos (gratuito, sin API key)
 const CORS = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
 
 async function corsGet(url){
   const r = await fetch(CORS(url));
   if(!r.ok) throw new Error('allorigins HTTP '+r.status);
   const wrapper = await r.json();
-  // allorigins devuelve { contents: "...", status: { http_code: 200 } }
   if(wrapper.status?.http_code && wrapper.status.http_code !== 200)
     throw new Error('Target HTTP '+wrapper.status.http_code);
   return JSON.parse(wrapper.contents);
 }
 
-// ─── FETCH TIPO DE CAMBIO (Frankfurter — tiene CORS nativo, no necesita proxy) ──
+// ─── FETCH TIPO DE CAMBIO ─────────────────────────────────────────────────────
 async function fetchTC(){
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN');
@@ -534,23 +529,39 @@ async function fetchTC(){
 }
 
 // ─── FETCH STOCK PRICES (Yahoo Finance vía allorigins) ───────────────────────
+// ACTUALIZADO: cascada de 3 fallbacks para funcionar fuera de horario de mercado
 async function fetchStockPrice(ticker){
-  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
   try {
     const d = await corsGet(yahooUrl);
-    const meta = d?.chart?.result?.[0]?.meta;
-    const price = meta?.regularMarketPrice ?? meta?.chartPreviousClose;
+    const result = d?.chart?.result?.[0];
+    const meta   = result?.meta;
+
+    // 1. Precio en tiempo real (mercado abierto)
+    const live = meta?.regularMarketPrice;
+    // 2. Último cierre disponible (mercado cerrado o fines de semana)
+    const prevClose = meta?.chartPreviousClose ?? meta?.previousClose;
+    // 3. Último dato de la serie histórica (fallback extra)
+    const quotes    = result?.indicators?.quote?.[0]?.close ?? [];
+    const lastClose = quotes.filter(Boolean).at(-1);
+
+    const price = live || prevClose || lastClose;
     if(!price) throw new Error('Sin precio en respuesta');
     return price;
+
   } catch(e){
     console.warn(`Yahoo ${ticker} falló:`, e.message);
-    // Segundo intento con query2 (Yahoo tiene dos endpoints)
     try {
-      const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-      const d2 = await corsGet(url2);
-      const meta2 = d2?.chart?.result?.[0]?.meta;
-      const price2 = meta2?.regularMarketPrice ?? meta2?.chartPreviousClose;
-      if(!price2) throw new Error('Sin precio en respuesta (query2)');
+      const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
+      const d2   = await corsGet(url2);
+      const result2 = d2?.chart?.result?.[0];
+      const meta2   = result2?.meta;
+      const live2   = meta2?.regularMarketPrice;
+      const prev2   = meta2?.chartPreviousClose ?? meta2?.previousClose;
+      const quotes2 = result2?.indicators?.quote?.[0]?.close ?? [];
+      const last2   = quotes2.filter(Boolean).at(-1);
+      const price2  = live2 || prev2 || last2;
+      if(!price2) throw new Error('Sin precio (query2)');
       return price2;
     } catch(e2){
       console.warn(`Yahoo ${ticker} query2 también falló:`, e2.message);
@@ -564,7 +575,6 @@ async function fetchCryptoPrices(coinIds){
   const ids = coinIds.join(',');
   const cgUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
   try {
-    // CoinGecko a veces permite CORS directo — intentar primero
     const r = await fetch(cgUrl);
     if(!r.ok) throw new Error('HTTP '+r.status);
     return await r.json();
@@ -648,7 +658,6 @@ function renderAccCards(tc){
 
   container.innerHTML = html;
 
-  // Update summary
   const pnlTotal = totalValor - totalCosto;
   const pnlPctT  = pct(totalValor, totalCosto);
   document.getElementById('sum-valor').textContent = fmtMXN(totalValor);
@@ -767,11 +776,9 @@ function renderCryptoCards(tc){
   if(!visibleNums) document.querySelectorAll('.blurable').forEach(el=>el.style.filter='blur(7px)');
 }
 
-const PODER_COMPRA  = 103759.63; // poder de compra total (fijo)
-// Divisas: solo informativo, NO se suma al total
+const PODER_COMPRA  = 103759.63;
 
 function updateGrandTotal(accValor){
-  // Usar valor pasado o parsear el banner si ya existe
   const accEl   = document.getElementById('banner-acc-total');
   const accText = accEl ? accEl.textContent : '—';
   let accV = 0;
@@ -781,7 +788,6 @@ function updateGrandTotal(accValor){
   if(accValor !== null && accValor !== undefined) accV = accValor;
 
   const cryptoV = cryptoValorTotal || 0;
-  // Total = Valor Acciones + Valor Crypto + Poder de compra (Divisas: solo informativo)
   const total = accV + cryptoV + PODER_COMPRA;
   if(total > 0) document.getElementById('grand-total').textContent = fmtMXN(total);
 }
@@ -794,9 +800,17 @@ function setStatus(elId, type, text){
   el.textContent = text;
 }
 
+// ─── MARKET HOURS HELPER ─────────────────────────────────────────────────────
+function isMktOpen(){
+  const now = new Date();
+  const et  = new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const day = et.getDay(); // 0=dom, 6=sab
+  const h   = et.getHours() + et.getMinutes()/60;
+  return day >= 1 && day <= 5 && h >= 9.5 && h < 16;
+}
+
 // ─── MAIN REFRESH ────────────────────────────────────────────────────────────
 async function refreshAll(){
-  // Disable buttons
   ['btn-acc','btn-cry'].forEach(id => {
     const b = document.getElementById(id);
     if(b){ b.disabled = true; b.textContent = '↻ Actualizando...'; }
@@ -817,7 +831,6 @@ async function refreshAll(){
       accPrices[ticker] = res.value;
     } else {
       accFailed++;
-      // Keep last cached value if exists
       if(!accPrices[ticker]) accPrices[ticker] = null;
     }
   });
@@ -858,7 +871,7 @@ async function refreshAll(){
   document.getElementById('cry-footer-tc').textContent = `${tcStr} · CoinGecko + Frankfurter`;
 
   if(accFailed === 0){
-    setStatus('acc-status','ok','✓ Live');
+    setStatus('acc-status','ok', isMktOpen() ? '✓ Live' : '✓ Último cierre');
     accStale = false;
   } else if(accFailed < tickers.length){
     setStatus('acc-status','warn',`⚠ ${accFailed} sin precio`);
@@ -869,7 +882,7 @@ async function refreshAll(){
   }
 
   if(cryFailed === 0){
-    setStatus('cry-status','ok','✓ Live');
+    setStatus('cry-status','ok', isMktOpen() ? '✓ Live' : '✓ Último cierre');
     cryStale = false;
   } else {
     setStatus('cry-status','warn',`⚠ ${cryFailed} sin precio`);
@@ -899,7 +912,7 @@ const EARNINGS_DATA = [
   { ticker:'WMT',  nombre:'Walmart',          fecha:'2026-05-19', nota:'Gran ganador 🏆' },
   { ticker:'NVDA', nombre:'Nvidia (watchlist)',fecha:'2026-05-20', nota:'Catalizador entrada' },
   { ticker:'AVGO', nombre:'Broadcom',         fecha:'2026-06-04', nota:'Monitor AI revenue' },
-  { ticker:'ORCL', nombre:'Oracle',           fecha:'2026-06-15', nota:'Ver conversión RPO' }, // aprox
+  { ticker:'ORCL', nombre:'Oracle',           fecha:'2026-06-15', nota:'Ver conversión RPO' },
   { ticker:'ADBE', nombre:'Adobe',            fecha:'2026-06-11', nota:'Esperar nuevo CEO' },
 ];
 
@@ -909,8 +922,7 @@ function getEarningsLabel(fechaStr){
   const diffMs  = target - today;
   const diffDays= Math.round(diffMs / 86400000);
 
-  // Lunes de la semana actual (hoy - día_semana + 1, domingo=0)
-  const dayOfWeek = today.getDay(); // 0=dom,1=lun,...,6=sab
+  const dayOfWeek = today.getDay();
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   const endOfWeek = new Date(startOfWeek);
