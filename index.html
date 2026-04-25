@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portafolio · Lucas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f5f7;--bg2:#ffffff;--bg3:#f0f0f3;
+  --border:#e2e2ea;--border2:#c8c8d8;
+  --text:#1a1a2e;--text2:#5a5a78;--text3:#9090a8;
+  --green:#16a85a;--green-bg:rgba(22,168,90,.1);
+  --red:#e02040;--red-bg:rgba(224,32,64,.1);
+  --blue:#2563eb;--blue-bg:rgba(37,99,235,.1);
+  --yellow:#c07000;--yellow-bg:rgba(192,112,0,.1);
+  --orange:#d06000;--orange-bg:rgba(208,96,0,.1);
+  --neutral-bg:rgba(90,90,120,.08);
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:960px;margin:0 auto}
+
+/* ── TABS ── */
+.tabs-wrap{padding:1.5rem 1.5rem 0}
+.tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:1.5rem;width:fit-content;box-shadow:var(--shadow)}
+.tab{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text2);border:none;background:transparent;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.tab.active{background:var(--bg);color:var(--text);border:1px solid var(--border2);box-shadow:var(--shadow)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── CONTENT ── */
+.content{padding:0 1.5rem 2rem}
+.pane{display:none}.pane.active{display:block}
+
+/* ── REFRESH BAR ── */
+.refresh-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.25rem;box-shadow:var(--shadow);gap:10px;flex-wrap:wrap}
+.refresh-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.refresh-ts{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+.refresh-tc{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;padding:2px 8px;background:var(--bg3);border-radius:20px;border:1px solid var(--border)}
+.refresh-status{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:20px}
+.refresh-status.ok{background:var(--green-bg);color:var(--green)}
+.refresh-status.warn{background:var(--yellow-bg);color:var(--yellow)}
+.refresh-status.err{background:var(--red-bg);color:var(--red)}
+.refresh-status.loading{background:var(--blue-bg);color:var(--blue)}
+.btn-refresh{font-size:12px;cursor:pointer;padding:6px 14px;border-radius:var(--radius-sm);background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'DM Sans',sans-serif;transition:all .15s;box-shadow:var(--shadow);white-space:nowrap}
+.btn-refresh:hover{background:var(--bg3);border-color:var(--blue);color:var(--blue)}
+.btn-refresh:disabled{opacity:.5;cursor:not-allowed}
+.countdown{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem}
+.htitle{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.hsub{font-size:11px;color:var(--text2);margin-top:3px;font-family:'DM Mono',monospace}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:var(--green-bg);padding:4px 10px;border-radius:20px;font-family:'DM Mono',monospace;border:1px solid rgba(22,168,90,.2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── SUMMARY GRID ── */
+.sg{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem}
+.m{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;box-shadow:var(--shadow)}
+.ml{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;font-family:'DM Mono',monospace}
+.mv{font-size:17px;font-weight:600}
+.mv.g{color:var(--green)}.mv.r{color:var(--red)}.mv.b{color:var(--blue)}
+.dvd{height:1px;background:var(--border);margin:1.5rem 0}
+.sl{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-family:'DM Mono',monospace}
+
+/* ── CARDS ── */
+.cards{display:flex;flex-direction:column;gap:6px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s,box-shadow .2s;box-shadow:var(--shadow)}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
+.card.open{border-color:var(--border2);box-shadow:var(--shadow-md)}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.ch:hover{background:var(--bg3)}
+.chl{display:flex;align-items:center;gap:12px}
+.tb{width:46px;height:38px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;font-family:'DM Mono',monospace}
+.tb-g{background:var(--green-bg);color:var(--green)}
+.tb-r{background:var(--red-bg);color:var(--red)}
+.tb-n{background:var(--neutral-bg);color:var(--text2)}
+.tb-b{background:var(--blue-bg);color:var(--blue)}
+.tb-o{background:var(--orange-bg);color:var(--orange)}
+.ctk{font-size:14px;font-weight:500}
+.cnm{font-size:11px;color:var(--text2);margin-top:1px}
+.chr{display:flex;align-items:center;gap:10px}
+.pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap;font-family:'DM Mono',monospace}
+.pill-g{background:var(--green-bg);color:var(--green)}
+.pill-r{background:var(--red-bg);color:var(--red)}
+.pill-n{background:var(--neutral-bg);color:var(--text2)}
+.chv{font-size:10px;color:var(--text3);transition:transform .2s}
+.card.open .chv{transform:rotate(180deg)}
+.cb{display:none;border-top:1px solid var(--border);padding:14px 16px 16px;background:var(--bg3)}
+.card.open .cb{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+.fl{font-size:10px;color:var(--text3);margin-bottom:2px;font-family:'DM Mono',monospace}
+.fv{font-size:13px;font-weight:500}
+.fv.g{color:var(--green)}.fv.r{color:var(--red)}.fv.b{color:var(--blue)}.fv.o{color:var(--orange)}.fv.w{color:var(--yellow)}
+.sep{height:1px;background:var(--border);margin:10px 0}
+.stale-badge{font-size:9px;background:var(--yellow-bg);color:var(--yellow);padding:1px 6px;border-radius:10px;font-family:'DM Mono',monospace;margin-left:4px;vertical-align:middle}
+
+/* ── EARNINGS SLIDER ── */
+.earn-wrap{overflow:hidden}
+.earn-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.earn-scroll::-webkit-scrollbar{height:3px}
+.earn-scroll::-webkit-scrollbar-track{background:var(--bg3);border-radius:2px}
+.earn-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ec{flex:0 0 150px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.ec.hot{border-color:rgba(192,112,0,.4);background:rgba(192,112,0,.04)}
+.ec.soon{border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.04)}
+.etag{font-size:10px;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace}
+.edot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ed-hot{background:var(--yellow)}.ed-soon{background:var(--blue)}.ed-ok{background:var(--border2)}
+.eticker{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+.ename{font-size:11px;color:var(--text2);margin-top:2px}
+.edate{font-size:11px;font-weight:500;margin-top:8px;font-family:'DM Mono',monospace}
+.enote{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ── WATCHLIST TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.col-tk{width:13%}.col-ac{width:16%}.col-wh{width:12%}.col-pr{width:13%}.col-pl{width:46%}
+.tbl th{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:0 12px 10px;text-align:left;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg3)}
+.wtk{font-size:13px;font-weight:500}
+.wnm{font-size:10px;color:var(--text3);margin-top:1px;font-family:'DM Mono',monospace}
+.wpill{font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;white-space:nowrap;display:inline-block;font-family:'DM Mono',monospace}
+.p-add{background:var(--yellow-bg);color:var(--yellow)}
+.p-watch{background:var(--blue-bg);color:var(--blue)}
+.p-sell{background:var(--red-bg);color:var(--red)}
+.when{font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.when.hot{color:var(--yellow)}
+.tgt{font-size:11px;font-weight:500;color:var(--blue);font-family:'DM Mono',monospace}
+.plan{font-size:11px;color:var(--text2);line-height:1.6}
+.plan strong{font-weight:500;color:var(--text)}
+
+/* ── ALLOC BARS ── */
+.alloc{margin-bottom:1.25rem}
+.alloc-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px;margin-bottom:8px}
+.alloc-seg{height:100%;border-radius:2px}
+.alloc-legend{display:flex;flex-wrap:wrap;gap:8px 16px}
+.al-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.al-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── FOOTER ── */
+.rfbar{display:flex;align-items:center;justify-content:space-between;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)}
+.rft{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* ── MOBILE ── */
+.desktop-only{display:table}.mobile-only{display:none}
+@media(max-width:600px){
+  .tabs-wrap{padding:1rem 1rem 0}
+  .content{padding:0 1rem 2rem}
+  .tab{padding:7px 14px;font-size:12px}
+  .htitle{font-size:17px}
+  .sg{grid-template-columns:repeat(3,1fr)}
+  .ch{flex-wrap:wrap;gap:6px;padding:12px 14px}
+  .pill{font-size:10px;padding:2px 8px}
+  .g2{gap:6px 12px}
+  .fv{font-size:12px}
+  .desktop-only{display:none}
+  .mobile-only{display:flex;flex-direction:column;gap:6px}
+  .wmc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .wmc.open{border-color:var(--border2)}
+  .wmh{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none}
+  .wmh:active{background:var(--bg3)}
+  .wml{display:flex;flex-direction:column;gap:5px}
+  .wmtk{font-size:14px;font-weight:500}
+  .wmnm{font-size:11px;color:var(--text2);font-weight:400;margin-left:4px}
+  .wmr{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .wmwhen{font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+  .wmwhen.hot{color:var(--yellow)}
+  .wmchv{font-size:10px;color:var(--text3);transition:transform .2s}
+  .wmc.open .wmchv{transform:rotate(180deg)}
+  .wmb{display:none;border-top:1px solid var(--border);padding:12px 14px;background:var(--bg3)}
+  .wmc.open .wmb{display:block}
+  .wmrow{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+  .wmrow:last-child{margin-bottom:0}
+  .wmlabel{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em}
+  .wmval{font-size:12px;color:var(--text2);line-height:1.5}
+  .wmval.b{color:var(--blue);font-weight:500;font-family:'DM Mono',monospace}
+  .wmval strong{color:var(--text);font-weight:500}
+  .ec{flex:0 0 128px;padding:11px}
+  .eticker{font-size:17px}
+  .rfbar{flex-direction:column;gap:10px;align-items:flex-start}
+  .refresh-bar{gap:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('acciones',event)">📈 Acciones</button>
+    <button class="tab" onclick="switchTab('crypto',event)">₿ Crypto</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════
+     PANE: ACCIONES
+═══════════════════════════════════════════ -->
+<div class="pane active" id="pane-acciones">
+
+  <!-- REFRESH BAR -->
+  <div class="refresh-bar">
+    <div class="refresh-info">
+      <span class="refresh-ts" id="acc-ts">⏱ Sin datos aún</span>
+      <span class="refresh-tc" id="acc-tc">TC: —</span>
+      <span class="refresh-status loading" id="acc-status">Cargando...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="countdown" id="acc-countdown"></span>
+      <button class="btn-refresh" id="btn-acc" onclick="refreshAll()">↻ Actualizar ahora</button>
+    </div>
+  </div>
+
+  <!-- TOTAL BANNER -->
+  <div style="text-align:center;margin-bottom:1.5rem;padding:1.5rem 1rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md)">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace;margin-bottom:8px">Total Portafolio</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px">
+      <div class="blurable" style="font-size:36px;font-weight:600;letter-spacing:-.5px" id="grand-total">—</div>
+      <button onclick="toggleVis()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;padding:4px" id="eye-btn">👁</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 1rem">
+      <div style="text-align:left">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-family:'DM Mono',monospace;margin-bottom:3px">Acciones</div>
+        <div class="blurable" style="font-size:16px;font-weight:600" id="banner-acc-total">—</div>
+      </div>
+      <div style="width:1px;height:32px;background:var(--border)"></div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-family:'DM Mono',monospace;margin-bottom:3px">Crypto</div>
+        <div class="blurable" style="font-size:16px;font-weight:600" id="banner-crypto-total">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hdr">
+    <div>
+      <div class="htitle">Portafolio Acciones</div>
+      <div class="hsub">Actinver · 14 posiciones · Precios en tiempo real</div>
+    </div>
+    <div class="live"><span class="live-dot"></span>Yahoo Finance</div>
+  </div>
+
+  <!-- SUMMARY METRICS -->
+  <div class="sg">
+    <div class="m"><div class="ml">Valor MXN</div><div class="mv" id="sum-valor">—</div></div>
+    <div class="m"><div class="ml">Costo MXN</div><div class="mv" id="sum-costo">—</div></div>
+    <div class="m"><div class="ml">P&L total</div><div class="mv" id="sum-pnl">—</div></div>
+    <div class="m"><div class="ml">En verde</div><div class="mv g" id="sum-verde">—</div></div>
+    <div class="m"><div class="ml">En rojo</div><div class="mv r" id="sum-rojo">—</div></div>
+  </div>
+  <div style="margin-bottom:1.25rem">
+    <div class="m" style="border-color:rgba(22,168,90,.3);background:rgba(22,168,90,.04)"><div class="ml">Poder de compra total</div><div class="mv g">$103,759.63</div></div>
+  </div>
+
+  <div class="sl">Posiciones activas — clic para ver detalle</div>
+  <div class="cards" id="acc-cards">
+    <!-- Generated by JS -->
+    <div style="padding:2rem;text-align:center;color:var(--text3);font-family:'DM Mono',monospace;font-size:12px">Cargando precios...</div>
+  </div>
+
+  <div class="dvd"></div>
+
+  <!-- EARNINGS SLIDER — generado por JS con etiquetas dinámicas -->
+  <div class="sl">Próximos earnings — desliza →</div>
+  <div class="earn-wrap">
+    <div class="earn-scroll" id="earnings-scroll">
+      <!-- Generado por renderEarnings() -->
+    </div>
+  </div>
+
+  <div class="dvd"></div>
+
+  <!-- WATCHLIST -->
+  <div class="sl">Watchlist — plan de acción</div>
+  <table class="tbl desktop-only">
+    <colgroup><col class="col-tk"><col class="col-ac"><col class="col-wh"><col class="col-pr"><col class="col-pl"></colgroup>
+    <thead><tr><th>Ticker</th><th>Acción</th><th>Cuándo</th><th>Precio obj.</th><th>Plan concreto</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="wtk">MELI</div><div class="wnm">MercadoLibre</div></td>
+        <td><span class="wpill p-add">+1 acción</span></td>
+        <td><div class="when hot">Lun 28 Abr</div></td>
+        <td><div class="tgt">$1,800–1,870</div></td>
+        <td><div class="plan">Revisar precio en la mañana. Si está en rango → ejecutas. Antes del earnings del <strong>07/May</strong>.</div></td>
+      </tr>
+      <tr>
+        <td><div class="wtk">NVDA</div><div class="wnm">Nvidia</div></td>
+        <td><span class="wpill p-watch">Esperar</span></td>
+        <td><div class="when">Alerta activa</div></td>
+        <td><div class="tgt">$188–$190</div></td>
+        <td><div class="plan">Pon alerta en <strong>$188</strong>. Si llega → entras 1–2 acc. Earnings <strong>20/May</strong> como catalizador.</div></td>
+      </tr>
+      <tr>
+        <td><div class="wtk">PYPL</div><div class="wnm">PayPal</div></td>
+        <td><span class="wpill p-sell">Decisión</span></td>
+        <td><div class="when hot">05/May</div></td>
+        <td><div class="tgt">Hold o vender</div></td>
+        <td><div class="plan">Si CEO da plan concreto → <strong>hold</strong>. Si decepciona → vender y reubicar en NVDA.</div></td>
+      </tr>
+      <tr>
+        <td><div class="wtk">WIX</div><div class="wnm">Wix.com</div></td>
+        <td><span class="wpill p-watch">Analizar</span></td>
+        <td><div class="when hot">13/May</div></td>
+        <td><div class="tgt">~$100 USD</div></td>
+        <td><div class="plan">Esperar earnings <strong>13/May</strong> para decidir hold o vender.</div></td>
+      </tr>
+      <tr>
+        <td><div class="wtk">ADBE</div><div class="wnm">Adobe</div></td>
+        <td><span class="wpill p-watch">Condicional</span></td>
+        <td><div class="when">Esperar CEO</div></td>
+        <td><div class="tgt">$250–$255</div></td>
+        <td><div class="plan">Buyback $25B anunciado — señal positiva. Esperar CEO + earnings <strong>11/Jun</strong> antes de promediar.</div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- WATCHLIST MOBILE -->
+  <div class="mobile-only">
+    <div class="wmc" id="wm-meli"><div class="wmh" onclick="wtoggle('wm-meli')"><div class="wml"><span class="wpill p-add">+1 acción</span><div class="wmtk">MELI <span class="wmnm">MercadoLibre</span></div></div><div class="wmr"><span class="wmwhen hot">Lun 28 Abr</span><span class="wmchv">▼</span></div></div><div class="wmb"><div class="wmrow"><span class="wmlabel">Precio obj.</span><span class="wmval b">$1,800–1,870</span></div><div class="wmrow"><span class="wmlabel">Plan</span><span class="wmval">Revisar precio mañana lunes. Si está en rango → ejecutas antes de <strong>07/May</strong>.</span></div></div></div>
+    <div class="wmc" id="wm-nvda"><div class="wmh" onclick="wtoggle('wm-nvda')"><div class="wml"><span class="wpill p-watch">Esperar</span><div class="wmtk">NVDA <span class="wmnm">Nvidia</span></div></div><div class="wmr"><span class="wmwhen">Alerta activa</span><span class="wmchv">▼</span></div></div><div class="wmb"><div class="wmrow"><span class="wmlabel">Precio obj.</span><span class="wmval b">$188–$190</span></div><div class="wmrow"><span class="wmlabel">Plan</span><span class="wmval">Alerta en <strong>$188</strong>. Earnings <strong>20/May</strong>.</span></div></div></div>
+    <div class="wmc" id="wm-pypl"><div class="wmh" onclick="wtoggle('wm-pypl')"><div class="wml"><span class="wpill p-sell">Decisión</span><div class="wmtk">PYPL <span class="wmnm">PayPal</span></div></div><div class="wmr"><span class="wmwhen hot">05/May</span><span class="wmchv">▼</span></div></div><div class="wmb"><div class="wmrow"><span class="wmlabel">Plan</span><span class="wmval">Si CEO da plan → <strong>hold</strong>. Si no → vender y reubicar NVDA.</span></div></div></div>
+    <div class="wmc" id="wm-wix"><div class="wmh" onclick="wtoggle('wm-wix')"><div class="wml"><span class="wpill p-watch">Analizar</span><div class="wmtk">WIX <span class="wmnm">Wix.com</span></div></div><div class="wmr"><span class="wmwhen hot">13/May</span><span class="wmchv">▼</span></div></div><div class="wmb"><div class="wmrow"><span class="wmlabel">Plan</span><span class="wmval">Esperar earnings <strong>13/May</strong> para decidir.</span></div></div></div>
+    <div class="wmc" id="wm-adbe"><div class="wmh" onclick="wtoggle('wm-adbe')"><div class="wml"><span class="wpill p-watch">Condicional</span><div class="wmtk">ADBE <span class="wmnm">Adobe</span></div></div><div class="wmr"><span class="wmwhen">Esperar CEO</span><span class="wmchv">▼</span></div></div><div class="wmb"><div class="wmrow"><span class="wmlabel">Plan</span><span class="wmval">Buyback $25B. Esperar CEO + earnings <strong>11/Jun</strong>.</span></div></div></div>
+  </div>
+
+  <div class="rfbar">
+    <div class="rft" id="acc-footer-tc">Frankfurter API · Yahoo Finance API</div>
+  </div>
+
+</div><!-- /pane-acciones -->
+
+
+<!-- ═══════════════════════════════════════════
+     PANE: CRYPTO
+═══════════════════════════════════════════ -->
+<div class="pane" id="pane-crypto">
+
+  <!-- REFRESH BAR -->
+  <div class="refresh-bar">
+    <div class="refresh-info">
+      <span class="refresh-ts" id="cry-ts">⏱ Sin datos aún</span>
+      <span class="refresh-tc" id="cry-tc">TC: —</span>
+      <span class="refresh-status loading" id="cry-status">Cargando...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="countdown" id="cry-countdown"></span>
+      <button class="btn-refresh" id="btn-cry" onclick="refreshAll()">↻ Actualizar ahora</button>
+    </div>
+  </div>
+
+  <div class="hdr">
+    <div>
+      <div class="htitle">Portafolio Crypto</div>
+      <div class="hsub">Binance · Precios via CoinGecko · Auto-refresh 5 min</div>
+    </div>
+    <div class="live" style="color:var(--orange);background:var(--orange-bg);border-color:rgba(208,96,0,.2)"><span class="live-dot" style="background:var(--orange)"></span>CoinGecko</div>
+  </div>
+
+  <!-- CRYPTO TOTAL BANNER -->
+  <div style="text-align:center;margin-bottom:1.25rem;padding:1.5rem 1rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md)">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace;margin-bottom:6px">Total Crypto</div>
+    <div class="blurable" style="font-size:32px;font-weight:600;letter-spacing:-.5px" id="cry-total-val">—</div>
+    <div style="margin-top:8px;display:flex;justify-content:center;gap:12px">
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Costo: <span class="blurable" id="cry-total-costo">—</span></span>
+      <span style="font-size:11px;font-family:'DM Mono',monospace" id="cry-total-pnl-wrap">P&L: <span class="blurable" id="cry-total-pnl">—</span></span>
+    </div>
+  </div>
+
+  <!-- ALLOC BAR (static) -->
+  <div class="sl">Asignación de activos</div>
+  <div class="alloc">
+    <div class="alloc-bar">
+      <div class="alloc-seg" style="width:65.52%;background:#d06000"></div>
+      <div class="alloc-seg" style="width:13.91%;background:#2563eb"></div>
+      <div class="alloc-seg" style="width:12.28%;background:#16a85a"></div>
+      <div class="alloc-seg" style="width:7.56%;background:#a855f7"></div>
+      <div class="alloc-seg" style="width:0.73%;background:#9090a8"></div>
+    </div>
+    <div class="alloc-legend">
+      <div class="al-item"><span class="al-dot" style="background:#d06000"></span>BTC 65.52%</div>
+      <div class="al-item"><span class="al-dot" style="background:#2563eb"></span>ETH 13.91%</div>
+      <div class="al-item"><span class="al-dot" style="background:#16a85a"></span>MXN 12.28%</div>
+      <div class="al-item"><span class="al-dot" style="background:#a855f7"></span>SOL 7.56%</div>
+      <div class="al-item"><span class="al-dot" style="background:#9090a8"></span>XRP + otros 0.73%</div>
+    </div>
+  </div>
+
+  <div class="sl">Posiciones — clic para ver detalle</div>
+  <div class="cards" id="cry-cards">
+    <div style="padding:2rem;text-align:center;color:var(--text3);font-family:'DM Mono',monospace;font-size:12px">Cargando precios...</div>
+  </div>
+
+  <div class="dvd"></div>
+
+  <div style="background:rgba(22,168,90,.06);border:1px solid rgba(22,168,90,.2);border-radius:var(--radius);padding:12px 16px;font-size:11px;color:var(--text2);line-height:1.7">
+    <span style="color:var(--green);font-weight:500">✅ Cálculo en tiempo real</span> — Valor = precio USD × TC × cantidad. P&L = Valor MXN − Costo MXN. Auto-refresh cada 5 minutos via CoinGecko (sin API key).
+  </div>
+
+  <div class="rfbar">
+    <div class="rft" id="cry-footer-tc">CoinGecko API · Frankfurter API</div>
+  </div>
+
+</div><!-- /pane-crypto -->
+</div><!-- /content -->
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── PORTFOLIO DATA ──────────────────────────────────────────────────────────
+// Precio promedio MXN: precio al que compraste convertido a MXN en su momento
+// Acciones: cantidad de acciones que tienes
+// Para el Costo MXN: precio_promedio_MXN × cantidad
+const ACCIONES = [
+  { id:'adbe', ticker:'ADBE', nombre:'Adobe',           qty:6,  avgMXN:6736.52, tbClass:'tb-r', target:'$339.88 USD', upside:'+33%', earnings:'11/Jun/2026', rec:'Hold · buyback $25B 🆕' },
+  { id:'amzn', ticker:'AMZN', nombre:'Amazon',          qty:3,  avgMXN:3590.00, tbClass:'tb-g', target:'~$260 USD',   upside:'~+14%',earnings:'01/May/2026 🔥',rec:'Hold' },
+  { id:'avgo', ticker:'AVGO', nombre:'Broadcom',        qty:2,  avgMXN:5593.00, tbClass:'tb-g', target:'$465.00 USD', upside:'+10%', earnings:'04/Jun/2026', rec:'Hold' },
+  { id:'meli', ticker:'MELI', nombre:'MercadoLibre',    qty:2,  avgMXN:29573.38,tbClass:'tb-g', target:'$2,725 USD',  upside:'+47%', earnings:'07/May/2026', rec:'Agregar lunes 28' },
+  { id:'meta', ticker:'META', nombre:'Meta Platforms',  qty:2,  avgMXN:10008.50,tbClass:'tb-g', target:'~$750 USD',   upside:'~+13%',earnings:'29/Abr/2026 🔥',rec:'Hold' },
+  { id:'msft', ticker:'MSFT', nombre:'Microsoft',       qty:12, avgMXN:7056.83, tbClass:'tb-g', target:'$583.00 USD', upside:'+40%', earnings:'29/Abr/2026 🔥',rec:'Hold / BUY' },
+  { id:'nu',   ticker:'NU',   nombre:'Nu Holdings',     qty:46, avgMXN:265.57,  tbClass:'tb-r', target:'~$16 USD',    upside:'~+10%',earnings:'13/May/2026', rec:'Hold' },
+  { id:'orcl', ticker:'ORCL', nombre:'Oracle',          qty:14, avgMXN:3159.93, tbClass:'tb-r', target:'$246.00 USD', upside:'+34%', earnings:'Jun/2026',    rec:'Hold' },
+  { id:'pypl', ticker:'PYPL', nombre:'PayPal',          qty:9,  avgMXN:1097.10, tbClass:'tb-r', target:'$55.00 USD',  upside:'+11%', earnings:'05/May/2026', rec:'Hold · decidir 5 may' },
+  { id:'qqq',  ticker:'QQQ',  nombre:'Invesco QQQ ETF', qty:1,  avgMXN:11156.00,tbClass:'tb-g', target:'ETF',         upside:'—',    earnings:'—',           rec:'Hold' },
+  { id:'slv',  ticker:'SLV',  nombre:'iShares Silver',  qty:4,  avgMXN:1437.79, tbClass:'tb-r', target:'ETF Plata',   upside:'—',    earnings:'—',           rec:'Monitor precio plata' },
+  { id:'voo',  ticker:'VOO',  nombre:'Vanguard S&P 500',qty:3,  avgMXN:11311.67,tbClass:'tb-g', target:'ETF',         upside:'—',    earnings:'—',           rec:'Hold largo plazo' },
+  { id:'wix',  ticker:'WIX',  nombre:'Wix.com',         qty:2,  avgMXN:2325.00, tbClass:'tb-r', target:'~$100 USD',   upside:'~+30%',earnings:'13/May/2026', rec:'Analizar post-earnings' },
+  { id:'wmt',  ticker:'WMT',  nombre:'Walmart',         qty:6,  avgMXN:1304.17, tbClass:'tb-g', target:'~$105 USD',   upside:'~+5%', earnings:'19/May/2026', rec:'Hold · gran ganador 🏆' },
+];
+
+const CRYPTO_HOLDINGS = [
+  { id:'btc', coinId:'bitcoin',  symbol:'BTC', nombre:'Bitcoin',      qty:0.0195473,  buyUSD:67785.50, costoMXN:22989.16, tbStyle:'background:var(--orange-bg);color:var(--orange)', extra:'' },
+  { id:'eth', coinId:'ethereum', symbol:'ETH', nombre:'Ethereum',     qty:0.13942439, buyUSD:2066.50,  costoMXN:4998.89,  tbStyle:'background:var(--blue-bg);color:var(--blue)',   extra:'' },
+  { id:'sol', coinId:'solana',   symbol:'SOL', nombre:'Solana',       qty:2.0504041,  buyUSD:82.70,    costoMXN:2942.01,  tbStyle:'background:rgba(168,85,247,.1);color:#a855f7',  extra:'· Staking' },
+  { id:'xrp', coinId:'ripple',   symbol:'XRP', nombre:'XRP',          qty:11.760269,  buyUSD:1.31,     costoMXN:267.29,   tbStyle:'background:var(--neutral-bg);color:var(--text2)',extra:'' },
+];
+const MXN_CASH     = 5006.13;
+const CRYPTO_COSTO = 36203.48; // suma de todos los costoMXN + MXN_CASH no tiene costo
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let TC          = null;   // tipo de cambio USD→MXN
+let accPrices   = {};     // { TICKER: priceUSD }
+let cryptoPrices= {};     // { coinId: priceUSD }
+let lastAccTS   = null;
+let lastCryTS   = null;
+let accStale    = false;
+let cryStale    = false;
+let accCdTimer  = null;
+let cryCdTimer  = null;
+let visibleNums = true;
+let cryptoValorTotal = 0;
+
+// ─── FORMAT HELPERS ──────────────────────────────────────────────────────────
+const fmtMXN = n => '$' + Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' MXN';
+const fmtUSD = (n,d=2) => '$' + n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sign   = n => n >= 0 ? '+' : '-';
+const pct    = (v,c) => ((v-c)/c*100);
+const fmtPnl = (pnl,costoMXN) => {
+  const p = pct(costoMXN+pnl, costoMXN);
+  return `${sign(pnl)}${fmtMXN(pnl)} (${sign(p)}${Math.abs(p).toFixed(2)}%)`;
+};
+const now = () => new Date().toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+// ─── VISIBILITY TOGGLE ───────────────────────────────────────────────────────
+function toggleVis(){
+  visibleNums = !visibleNums;
+  document.getElementById('eye-btn').textContent = visibleNums ? '👁' : '🙈';
+  const f = visibleNums ? 'none' : 'blur(7px)';
+  document.querySelectorAll('.blurable').forEach(el => el.style.filter = f);
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────────────────
+function switchTab(tab, e){
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-'+tab).classList.add('active');
+  e.target.classList.add('active');
+}
+function toggle(id)  { document.getElementById(id).classList.toggle('open'); }
+function wtoggle(id) { document.getElementById(id).classList.toggle('open'); }
+
+// ─── COUNTDOWN TIMER ─────────────────────────────────────────────────────────
+function startCountdown(secs, elId, onDone){
+  clearInterval(window[elId+'_iv']);
+  let r = secs;
+  const el = document.getElementById(elId);
+  if(el) el.textContent = `Próxima actualización: ${r}s`;
+  window[elId+'_iv'] = setInterval(()=>{
+    r--;
+    if(el) el.textContent = `Próxima actualización: ${r}s`;
+    if(r <= 0){ clearInterval(window[elId+'_iv']); if(el) el.textContent=''; onDone(); }
+  }, 1000);
+}
+
+// ─── CORS PROXY HELPER ───────────────────────────────────────────────────────
+// allorigins.win reenvía cualquier URL con headers CORS correctos (gratuito, sin API key)
+const CORS = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
+async function corsGet(url){
+  const r = await fetch(CORS(url));
+  if(!r.ok) throw new Error('allorigins HTTP '+r.status);
+  const wrapper = await r.json();
+  // allorigins devuelve { contents: "...", status: { http_code: 200 } }
+  if(wrapper.status?.http_code && wrapper.status.http_code !== 200)
+    throw new Error('Target HTTP '+wrapper.status.http_code);
+  return JSON.parse(wrapper.contents);
+}
+
+// ─── FETCH TIPO DE CAMBIO (Frankfurter — tiene CORS nativo, no necesita proxy) ──
+async function fetchTC(){
+  try {
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    TC = d.rates.MXN;
+    return TC;
+  } catch(e){
+    console.warn('Frankfurter directo falló, intentando proxy:', e.message);
+    try {
+      const d = await corsGet('https://api.frankfurter.app/latest?from=USD&to=MXN');
+      TC = d.rates.MXN;
+      return TC;
+    } catch(e2){
+      console.warn('Frankfurter proxy también falló:', e2.message);
+      return TC || 17.35;
+    }
+  }
+}
+
+// ─── FETCH STOCK PRICES (Yahoo Finance vía allorigins) ───────────────────────
+async function fetchStockPrice(ticker){
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+  try {
+    const d = await corsGet(yahooUrl);
+    const meta = d?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice ?? meta?.chartPreviousClose;
+    if(!price) throw new Error('Sin precio en respuesta');
+    return price;
+  } catch(e){
+    console.warn(`Yahoo ${ticker} falló:`, e.message);
+    // Segundo intento con query2 (Yahoo tiene dos endpoints)
+    try {
+      const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+      const d2 = await corsGet(url2);
+      const meta2 = d2?.chart?.result?.[0]?.meta;
+      const price2 = meta2?.regularMarketPrice ?? meta2?.chartPreviousClose;
+      if(!price2) throw new Error('Sin precio en respuesta (query2)');
+      return price2;
+    } catch(e2){
+      console.warn(`Yahoo ${ticker} query2 también falló:`, e2.message);
+      return null;
+    }
+  }
+}
+
+// ─── FETCH CRYPTO PRICES (CoinGecko vía allorigins) ─────────────────────────
+async function fetchCryptoPrices(coinIds){
+  const ids = coinIds.join(',');
+  const cgUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
+  try {
+    // CoinGecko a veces permite CORS directo — intentar primero
+    const r = await fetch(cgUrl);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  } catch(e){
+    console.warn('CoinGecko directo falló, usando proxy:', e.message);
+    try {
+      return await corsGet(cgUrl);
+    } catch(e2){
+      console.warn('CoinGecko proxy también falló:', e2.message);
+      return null;
+    }
+  }
+}
+
+// ─── RENDER ACCIONES CARDS ───────────────────────────────────────────────────
+function renderAccCards(tc){
+  const container = document.getElementById('acc-cards');
+  let totalValor = 0, totalCosto = 0, verde = 0, rojo = 0;
+  let html = '';
+
+  ACCIONES.forEach(a => {
+    const priceUSD  = accPrices[a.ticker];
+    const precioMXN = priceUSD ? priceUSD * tc : null;
+    const valorMXN  = precioMXN ? precioMXN * a.qty : null;
+    const costoMXN  = a.avgMXN * a.qty;
+    const pnlMXN    = valorMXN !== null ? valorMXN - costoMXN : null;
+    const pnlPct    = pnlMXN   !== null ? pct(valorMXN, costoMXN) : null;
+    const isPos     = pnlMXN !== null && pnlMXN >= 0;
+
+    if(valorMXN !== null) totalValor += valorMXN;
+    totalCosto += costoMXN;
+    if(pnlMXN !== null){ if(isPos) verde++; else rojo++; }
+
+    const stale = priceUSD === null;
+    const staleBadge = stale ? ' ⚠' : '';
+    const pillClass  = !stale ? (isPos ? 'pill-g' : 'pill-r') : 'pill-n';
+    const pillTxt    = pnlMXN !== null
+      ? `${sign(pnlMXN)}${fmtMXN(pnlMXN)} (${sign(pnlPct)}${Math.abs(pnlPct).toFixed(2)}%)`
+      : '⚠ Sin precio';
+    const tbClass2   = stale ? 'tb-n' : (isPos ? 'tb-g' : 'tb-r');
+
+    html += `
+    <div class="card" id="card-${a.id}">
+      <div class="ch" onclick="toggle('card-${a.id}')">
+        <div class="chl">
+          <div class="tb ${tbClass2}">${stale ? '⚠' : a.ticker}</div>
+          <div>
+            <div class="ctk">${a.nombre}${staleBadge}</div>
+            <div class="cnm">${a.qty} acc · ${precioMXN !== null ? fmtMXN(precioMXN)+'/acc' : '—'}</div>
+          </div>
+        </div>
+        <div class="chr">
+          <span class="pill ${pillClass} blurable">${pillTxt}</span>
+          <span class="chv">▼</span>
+        </div>
+      </div>
+      <div class="cb">
+        <div class="g2">
+          <div><div class="fl">Precio USD</div><div class="fv blurable">${priceUSD !== null ? fmtUSD(priceUSD) : '—'}</div></div>
+          <div><div class="fl">Precio MXN/acc</div><div class="fv blurable">${precioMXN !== null ? fmtMXN(precioMXN) : '—'}</div></div>
+          <div><div class="fl">Precio promedio MXN</div><div class="fv">${fmtMXN(a.avgMXN)}</div></div>
+          <div><div class="fl">Acciones</div><div class="fv">${a.qty}</div></div>
+          <div><div class="fl">Valor actual MXN</div><div class="fv blurable">${valorMXN !== null ? fmtMXN(valorMXN) : '—'}</div></div>
+          <div><div class="fl">Costo total MXN</div><div class="fv blurable">${fmtMXN(costoMXN)}</div></div>
+        </div>
+        <div class="sep"></div>
+        <div class="g2">
+          <div><div class="fl">P&L total MXN</div><div class="fv ${pnlMXN !== null ? (isPos?'g':'r') : ''} blurable">${pnlMXN !== null ? sign(pnlMXN)+fmtMXN(pnlMXN) : '—'}</div></div>
+          <div><div class="fl">% acumulado</div><div class="fv ${pnlPct !== null ? (isPos?'g':'r') : ''}">${pnlPct !== null ? sign(pnlPct)+Math.abs(pnlPct).toFixed(2)+'%' : '—'}</div></div>
+          <div><div class="fl">Target analistas</div><div class="fv b">${a.target}</div></div>
+          <div><div class="fl">Upside al target</div><div class="fv g">${a.upside}</div></div>
+          <div><div class="fl">Earnings</div><div class="fv w">${a.earnings}</div></div>
+          <div><div class="fl">Rec.</div><div class="fv">${a.rec}</div></div>
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">
+          Cálculo: ${priceUSD !== null ? fmtUSD(priceUSD) : '—'} USD × ${tc.toFixed(4)} TC × ${a.qty} acc = ${valorMXN !== null ? fmtMXN(valorMXN) : '—'}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Update summary
+  const pnlTotal = totalValor - totalCosto;
+  const pnlPctT  = pct(totalValor, totalCosto);
+  document.getElementById('sum-valor').textContent = fmtMXN(totalValor);
+  document.getElementById('sum-costo').textContent = fmtMXN(totalCosto);
+  const sumPnlEl = document.getElementById('sum-pnl');
+  sumPnlEl.textContent = sign(pnlTotal)+fmtMXN(pnlTotal)+' ('+sign(pnlPctT)+Math.abs(pnlPctT).toFixed(2)+'%)';
+  sumPnlEl.className = 'mv ' + (pnlTotal>=0?'g':'r');
+  document.getElementById('sum-verde').textContent = verde;
+  document.getElementById('sum-rojo').textContent  = rojo;
+  document.getElementById('banner-acc-total').textContent = fmtMXN(totalValor);
+  updateGrandTotal(totalValor);
+
+  if(!visibleNums) document.querySelectorAll('.blurable').forEach(el=>el.style.filter='blur(7px)');
+}
+
+// ─── RENDER CRYPTO CARDS ─────────────────────────────────────────────────────
+function renderCryptoCards(tc){
+  const container = document.getElementById('cry-cards');
+  let totalValor = MXN_CASH, totalPnl = 0;
+  let html = '';
+
+  CRYPTO_HOLDINGS.forEach(c => {
+    const priceUSD = cryptoPrices[c.coinId];
+    const valorMXN = priceUSD ? c.qty * priceUSD * tc : null;
+    const pnlMXN   = valorMXN !== null ? valorMXN - c.costoMXN : null;
+    const pnlPct   = pnlMXN  !== null ? pct(valorMXN, c.costoMXN) : null;
+    const isPos    = pnlMXN !== null && pnlMXN >= 0;
+
+    if(valorMXN !== null){ totalValor += valorMXN; totalPnl += pnlMXN; }
+    const pillTxt  = pnlMXN !== null
+      ? `${sign(pnlMXN)}${fmtMXN(pnlMXN)} (${sign(pnlPct)}${Math.abs(pnlPct).toFixed(2)}%)`
+      : '—';
+    const pillColor= pnlMXN !== null ? (isPos?'background:var(--green-bg);color:var(--green)':'background:var(--red-bg);color:var(--red)') : 'background:var(--neutral-bg);color:var(--text2)';
+
+    html += `
+    <div class="card" id="ccard-${c.id}">
+      <div class="ch" onclick="toggle('ccard-${c.id}')">
+        <div class="chl">
+          <div class="tb" style="${c.tbStyle}">${c.symbol}</div>
+          <div>
+            <div class="ctk">${c.nombre}</div>
+            <div class="cnm">${c.qty} ${c.symbol}${c.extra} · ${priceUSD !== null ? fmtUSD(priceUSD)+' USD' : '—'}</div>
+          </div>
+        </div>
+        <div class="chr">
+          <span class="pill blurable" style="${pillColor}">${pillTxt}</span>
+          <span class="chv">▼</span>
+        </div>
+      </div>
+      <div class="cb">
+        <div class="g2">
+          <div><div class="fl">Precio live USD</div><div class="fv blurable">${priceUSD !== null ? fmtUSD(priceUSD) : '—'}</div></div>
+          <div><div class="fl">Valor actual MXN</div><div class="fv blurable">${valorMXN !== null ? fmtMXN(valorMXN) : '—'}</div></div>
+          <div><div class="fl">Precio compra USD</div><div class="fv">${fmtUSD(c.buyUSD)}</div></div>
+          <div><div class="fl">Costo total MXN</div><div class="fv blurable">${fmtMXN(c.costoMXN)}</div></div>
+        </div>
+        <div class="sep"></div>
+        <div class="g2">
+          <div><div class="fl">P&L MXN</div><div class="fv ${pnlMXN!==null?(isPos?'g':'r'):''} blurable">${pnlMXN !== null ? sign(pnlMXN)+fmtMXN(pnlMXN) : '—'}</div></div>
+          <div><div class="fl">P&L %</div><div class="fv ${pnlPct!==null?(isPos?'g':'r'):''}">${pnlPct !== null ? sign(pnlPct)+Math.abs(pnlPct).toFixed(2)+'%' : '—'}</div></div>
+          <div><div class="fl">Cantidad</div><div class="fv">${c.qty} ${c.symbol}</div></div>
+          <div><div class="fl">Fuente</div><div class="fv g">CoinGecko ✅</div></div>
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">
+          Cálculo: ${priceUSD!==null?fmtUSD(priceUSD):'—'} USD × ${tc.toFixed(4)} TC × ${c.qty} = ${valorMXN!==null?fmtMXN(valorMXN):'—'}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // MXN Cash card
+  html += `
+  <div class="card" id="ccard-mxn">
+    <div class="ch" onclick="toggle('ccard-mxn')">
+      <div class="chl">
+        <div class="tb tb-g">MXN</div>
+        <div><div class="ctk">Mexican Peso</div><div class="cnm">Efectivo disponible en Binance</div></div>
+      </div>
+      <div class="chr"><span class="pill pill-n blurable">${fmtMXN(MXN_CASH)}</span><span class="chv">▼</span></div>
+    </div>
+    <div class="cb">
+      <div class="g2">
+        <div><div class="fl">Saldo MXN</div><div class="fv blurable">${fmtMXN(MXN_CASH)}</div></div>
+        <div><div class="fl">Disponible</div><div class="fv blurable">${fmtMXN(MXN_CASH)}</div></div>
+        <div><div class="fl">Tipo</div><div class="fv">Fiat · listo para comprar</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="ccard-otros">
+    <div class="ch" onclick="toggle('ccard-otros')">
+      <div class="chl"><div class="tb tb-n">+</div><div><div class="ctk">ChainGPT + Sologenic</div><div class="cnm">CGPT + SOLO · valor residual</div></div></div>
+      <div class="chr"><span class="pill pill-n">~$0.03 MXN</span><span class="chv">▼</span></div>
+    </div>
+    <div class="cb">
+      <div class="g2">
+        <div><div class="fl">ChainGPT (CGPT)</div><div class="fv">0.23 tokens</div></div>
+        <div><div class="fl">Sologenic (SOLO)</div><div class="fv">0.05393847</div></div>
+        <div><div class="fl">Valor total</div><div class="fv">~$0.03 MXN</div></div>
+        <div><div class="fl">Seguimiento</div><div class="fv">No activo</div></div>
+      </div>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+
+  cryptoValorTotal = totalValor;
+  const totalPnlPct = pct(totalValor, CRYPTO_COSTO);
+  document.getElementById('cry-total-val').textContent   = fmtMXN(totalValor);
+  document.getElementById('cry-total-costo').textContent = fmtMXN(CRYPTO_COSTO);
+  const pnlEl = document.getElementById('cry-total-pnl');
+  pnlEl.textContent = sign(totalPnl)+fmtMXN(totalPnl)+' ('+sign(totalPnlPct)+Math.abs(totalPnlPct).toFixed(2)+'%)';
+  document.getElementById('cry-total-pnl-wrap').style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('banner-crypto-total').textContent = fmtMXN(totalValor);
+  updateGrandTotal(null);
+
+  if(!visibleNums) document.querySelectorAll('.blurable').forEach(el=>el.style.filter='blur(7px)');
+}
+
+const PODER_COMPRA  = 103759.63; // poder de compra total (fijo)
+// Divisas: solo informativo, NO se suma al total
+
+function updateGrandTotal(accValor){
+  // Usar valor pasado o parsear el banner si ya existe
+  const accEl   = document.getElementById('banner-acc-total');
+  const accText = accEl ? accEl.textContent : '—';
+  let accV = 0;
+  if(accText && accText !== '—'){
+    accV = parseFloat(accText.replace(/[^0-9.,]/g,'').replace(/,/g,'')) || 0;
+  }
+  if(accValor !== null && accValor !== undefined) accV = accValor;
+
+  const cryptoV = cryptoValorTotal || 0;
+  // Total = Valor Acciones + Valor Crypto + Poder de compra (Divisas: solo informativo)
+  const total = accV + cryptoV + PODER_COMPRA;
+  if(total > 0) document.getElementById('grand-total').textContent = fmtMXN(total);
+}
+
+// ─── STATUS HELPERS ───────────────────────────────────────────────────────────
+function setStatus(elId, type, text){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.className = 'refresh-status ' + type;
+  el.textContent = text;
+}
+
+// ─── MAIN REFRESH ────────────────────────────────────────────────────────────
+async function refreshAll(){
+  // Disable buttons
+  ['btn-acc','btn-cry'].forEach(id => {
+    const b = document.getElementById(id);
+    if(b){ b.disabled = true; b.textContent = '↻ Actualizando...'; }
+  });
+  setStatus('acc-status','loading','Actualizando...');
+  setStatus('cry-status','loading','Actualizando...');
+
+  // 1. Fetch TC
+  const tc = await fetchTC();
+
+  // 2. Fetch stocks in parallel
+  const tickers = ACCIONES.map(a=>a.ticker);
+  const stockResults = await Promise.allSettled(tickers.map(t => fetchStockPrice(t)));
+  let accFailed = 0;
+  stockResults.forEach((res,i) => {
+    const ticker = tickers[i];
+    if(res.status === 'fulfilled' && res.value !== null){
+      accPrices[ticker] = res.value;
+    } else {
+      accFailed++;
+      // Keep last cached value if exists
+      if(!accPrices[ticker]) accPrices[ticker] = null;
+    }
+  });
+
+  // 3. Fetch crypto in parallel
+  const coinIds = CRYPTO_HOLDINGS.map(c=>c.coinId);
+  const cgData  = await fetchCryptoPrices(coinIds);
+  let cryFailed = 0;
+  if(cgData){
+    CRYPTO_HOLDINGS.forEach(c => {
+      const p = cgData[c.coinId]?.usd;
+      if(p) cryptoPrices[c.coinId] = p;
+      else { cryFailed++; if(!cryptoPrices[c.coinId]) cryptoPrices[c.coinId] = null; }
+    });
+  } else {
+    cryFailed = CRYPTO_HOLDINGS.length;
+    cryStale = true;
+  }
+
+  const tsNow = now();
+  TC = tc;
+
+  // 4. Render
+  renderAccCards(tc);
+  renderCryptoCards(tc);
+
+  // 5. Update UI state
+  lastAccTS = tsNow;
+  lastCryTS = tsNow;
+  const tcStr = `TC: $1 USD = ${tc.toFixed(4)} MXN`;
+
+  document.getElementById('acc-ts').textContent = `⏱ ${tsNow}`;
+  document.getElementById('acc-tc').textContent = tcStr;
+  document.getElementById('acc-footer-tc').textContent = `${tcStr} · Yahoo Finance + Frankfurter`;
+
+  document.getElementById('cry-ts').textContent = `⏱ ${tsNow}`;
+  document.getElementById('cry-tc').textContent = tcStr;
+  document.getElementById('cry-footer-tc').textContent = `${tcStr} · CoinGecko + Frankfurter`;
+
+  if(accFailed === 0){
+    setStatus('acc-status','ok','✓ Live');
+    accStale = false;
+  } else if(accFailed < tickers.length){
+    setStatus('acc-status','warn',`⚠ ${accFailed} sin precio`);
+    accStale = true;
+  } else {
+    setStatus('acc-status','err','✗ Sin datos (caché)');
+    accStale = true;
+  }
+
+  if(cryFailed === 0){
+    setStatus('cry-status','ok','✓ Live');
+    cryStale = false;
+  } else {
+    setStatus('cry-status','warn',`⚠ ${cryFailed} sin precio`);
+    cryStale = true;
+  }
+
+  // Re-enable buttons
+  ['btn-acc','btn-cry'].forEach(id => {
+    const b = document.getElementById(id);
+    if(b){ b.disabled = false; b.textContent = '↻ Actualizar ahora'; }
+  });
+
+  // Start countdowns (5 min = 300s)
+  startCountdown(300,'acc-countdown', refreshAll);
+  startCountdown(300,'cry-countdown', refreshAll);
+}
+
+// ─── EARNINGS DATA & DYNAMIC LABELS ─────────────────────────────────────────
+const EARNINGS_DATA = [
+  { ticker:'MSFT', nombre:'Microsoft',        fecha:'2026-04-29', nota:'12 acc · after market' },
+  { ticker:'META', nombre:'Meta Platforms',   fecha:'2026-04-29', nota:'2 acc · after market' },
+  { ticker:'AMZN', nombre:'Amazon',           fecha:'2026-05-01', nota:'3 acc · catalizador' },
+  { ticker:'PYPL', nombre:'PayPal',           fecha:'2026-05-05', nota:'Hold o vender' },
+  { ticker:'MELI', nombre:'MercadoLibre',     fecha:'2026-05-07', nota:'Agregar 1 acc antes' },
+  { ticker:'NU',   nombre:'Nu Holdings',      fecha:'2026-05-13', nota:'46 acc · monitor' },
+  { ticker:'WIX',  nombre:'Wix.com',          fecha:'2026-05-13', nota:'Analizar posición' },
+  { ticker:'WMT',  nombre:'Walmart',          fecha:'2026-05-19', nota:'Gran ganador 🏆' },
+  { ticker:'NVDA', nombre:'Nvidia (watchlist)',fecha:'2026-05-20', nota:'Catalizador entrada' },
+  { ticker:'AVGO', nombre:'Broadcom',         fecha:'2026-06-04', nota:'Monitor AI revenue' },
+  { ticker:'ORCL', nombre:'Oracle',           fecha:'2026-06-15', nota:'Ver conversión RPO' }, // aprox
+  { ticker:'ADBE', nombre:'Adobe',            fecha:'2026-06-11', nota:'Esperar nuevo CEO' },
+];
+
+function getEarningsLabel(fechaStr){
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const target  = new Date(fechaStr); target.setHours(0,0,0,0);
+  const diffMs  = target - today;
+  const diffDays= Math.round(diffMs / 86400000);
+
+  // Lunes de la semana actual (hoy - día_semana + 1, domingo=0)
+  const dayOfWeek = today.getDay(); // 0=dom,1=lun,...,6=sab
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  const startNextWeek = new Date(endOfWeek); startNextWeek.setDate(endOfWeek.getDate() + 1);
+  const endNextWeek   = new Date(startNextWeek); endNextWeek.setDate(startNextWeek.getDate() + 6);
+
+  if(diffDays < 0)   return { label:'Pasado',       cls:'', dotCls:'ed-ok' };
+  if(diffDays === 0) return { label:'Hoy 🔥',        cls:'hot', dotCls:'ed-hot' };
+  if(diffDays <= 2)  return { label:'Esta semana',   cls:'hot', dotCls:'ed-hot' };
+  if(target >= startNextWeek && target <= endNextWeek)
+                     return { label:'Próxima semana',cls:'hot', dotCls:'ed-hot' };
+
+  const weeks = Math.floor(diffDays / 7);
+  const months= Math.floor(diffDays / 30);
+
+  if(diffDays <= 14) return { label:`En ${weeks} sem`,   cls:'soon', dotCls:'ed-soon' };
+  if(diffDays <= 30) return { label:`En ${weeks} sem`,   cls:'soon', dotCls:'ed-soon' };
+  if(months === 1)   return { label:`En 1 mes`,          cls:'soon', dotCls:'ed-soon' };
+  const remWeeks = Math.round((diffDays % 30) / 7);
+  if(remWeeks > 0)   return { label:`${months} mes ${remWeeks} sem`, cls:'', dotCls:'ed-ok' };
+  return               { label:`${months} mes`,          cls:'', dotCls:'ed-ok' };
+}
+
+function renderEarnings(){
+  const container = document.getElementById('earnings-scroll');
+  if(!container) return;
+  const fmtFecha = f => {
+    const d = new Date(f+'T12:00:00');
+    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
+  };
+  container.innerHTML = EARNINGS_DATA.map(e => {
+    const {label, cls, dotCls} = getEarningsLabel(e.fecha);
+    return `<div class="ec ${cls}">
+      <div class="etag"><span class="edot ${dotCls}"></span>${label}</div>
+      <div class="eticker">${e.ticker}</div>
+      <div class="ename">${e.nombre}</div>
+      <div class="edate">${fmtFecha(e.fecha)}</div>
+      <div class="enote">${e.nota}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => { renderEarnings(); refreshAll(); });
+</script>
+</body>
+</html>
