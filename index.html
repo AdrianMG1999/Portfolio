@@ -541,35 +541,58 @@ async function fetchTC(){
   }
 }
 
-// ─── FETCH STOCK PRICES (Financial Modeling Prep) ────────────────────────────
+// ─── FETCH STOCK PRICES (Financial Modeling Prep · stable API) ───────────────
 const FMP_KEY = '7iyz6kZifeKtzXVBbAdueuXi3SokCDbm';
 
-async function fetchOneFMP(ticker){
-  const url = `https://financialmodelingprep.com/api/v3/quote/${ticker}?apikey=${FMP_KEY}`;
-  const r = await fetch(url);
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const data = await r.json();
-  if(!Array.isArray(data) || data.length === 0) throw new Error('Sin datos');
-  const price = data[0].price ?? data[0].previousClose;
-  if(!price) throw new Error('Sin precio en respuesta');
-  return price;
-}
-
 async function fetchAllStockPrices(tickers){
-  // Llamadas individuales en paralelo — compatible con plan free de FMP
-  const results = await Promise.allSettled(tickers.map(t => fetchOneFMP(t)));
-  const priceMap = {};
-  results.forEach((res, i) => {
-    const ticker = tickers[i];
-    if(res.status === 'fulfilled'){
-      priceMap[ticker] = res.value;
-      saveCache(ticker, res.value);
-    } else {
-      console.warn(`FMP ${ticker}:`, res.reason?.message);
-      priceMap[ticker] = null;
-    }
-  });
-  return priceMap;
+  // Batch en 1 sola llamada con el endpoint stable de FMP
+  const symbols = tickers.join(',');
+  const url = `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${FMP_KEY}`;
+  try {
+    const r = await fetch(url, {signal: AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('Respuesta vacía');
+
+    const priceMap = {};
+    // Inicializar todos como null por si alguno no viene en la respuesta
+    tickers.forEach(t => priceMap[t] = null);
+    data.forEach(q => {
+      const price = q.price ?? q.previousClose;
+      if(q.symbol && price){
+        priceMap[q.symbol] = price;
+        saveCache(q.symbol, price);
+      }
+    });
+    return priceMap;
+
+  } catch(e){
+    console.warn('FMP batch falló:', e.message);
+    // Si falla el batch, intentar uno por uno como fallback
+    const priceMap = {};
+    const results = await Promise.allSettled(tickers.map(async t => {
+      const r2 = await fetch(
+        `https://financialmodelingprep.com/stable/quote?symbol=${t}&apikey=${FMP_KEY}`,
+        {signal: AbortSignal.timeout(8000)}
+      );
+      if(!r2.ok) throw new Error('HTTP ' + r2.status);
+      const d2 = await r2.json();
+      const price = d2?.[0]?.price ?? d2?.[0]?.previousClose;
+      if(!price) throw new Error('Sin precio');
+      return {ticker: t, price};
+    }));
+    results.forEach((res, i) => {
+      const ticker = tickers[i];
+      if(res.status === 'fulfilled'){
+        priceMap[ticker] = res.value.price;
+        saveCache(ticker, res.value.price);
+      } else {
+        console.warn(`FMP ${ticker}:`, res.reason?.message);
+        priceMap[ticker] = null;
+      }
+    });
+    return priceMap;
+  }
 }
 
 // ─── FETCH CRYPTO PRICES (CoinGecko vía allorigins) ─────────────────────────
@@ -874,7 +897,7 @@ async function refreshAll(){
 
   document.getElementById('acc-ts').textContent = `⏱ ${tsNow}`;
   document.getElementById('acc-tc').textContent = tcStr;
-  document.getElementById('acc-footer-tc').textContent = `${tcStr} · FMP + Frankfurter`;
+  document.getElementById('acc-footer-tc').textContent = `${tcStr} · Fin. Modeling Prep + Frankfurter`;
 
   document.getElementById('cry-ts').textContent = `⏱ ${tsNow}`;
   document.getElementById('cry-tc').textContent = tcStr;
