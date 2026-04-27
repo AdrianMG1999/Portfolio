@@ -495,7 +495,7 @@ function startCountdown(secs, elId, onDone){
   }, 1000);
 }
 
-// ─── CORS PROXY HELPER ───────────────────────────────────────────────────────
+// ─── CORS PROXY HELPER (solo para TC fallback) ───────────────────────────────
 const CORS = url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
 
 async function corsGet(url){
@@ -505,6 +505,19 @@ async function corsGet(url){
   if(wrapper.status?.http_code && wrapper.status.http_code !== 200)
     throw new Error('Target HTTP '+wrapper.status.http_code);
   return JSON.parse(wrapper.contents);
+}
+
+// ─── PRICE CACHE (localStorage) ──────────────────────────────────────────────
+function saveCache(ticker, price){
+  try { localStorage.setItem('px_'+ticker, JSON.stringify({p:price, t:Date.now()})); } catch(e){}
+}
+function loadCache(ticker){
+  try {
+    const raw = localStorage.getItem('px_'+ticker);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    return { price: d.p, age: Math.round((Date.now()-d.t)/60000) };
+  } catch(e){ return null; }
 }
 
 // ─── FETCH TIPO DE CAMBIO ─────────────────────────────────────────────────────
@@ -528,45 +541,31 @@ async function fetchTC(){
   }
 }
 
-// ─── FETCH STOCK PRICES (Yahoo Finance vía allorigins) ───────────────────────
-// ACTUALIZADO: cascada de 3 fallbacks para funcionar fuera de horario de mercado
-async function fetchStockPrice(ticker){
-  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
+// ─── FETCH STOCK PRICES (Financial Modeling Prep) ────────────────────────────
+const FMP_KEY = '7iyz6kZifeKtzXVBbAdueuXi3SokCDbm';
+
+async function fetchAllStockPrices(tickers){
+  // FMP batch: todos los tickers en 1 sola llamada 🔥
+  const symbols = tickers.join(',');
+  const url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${FMP_KEY}`;
   try {
-    const d = await corsGet(yahooUrl);
-    const result = d?.chart?.result?.[0];
-    const meta   = result?.meta;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('FMP HTTP '+r.status);
+    const data = await r.json();
+    if(!Array.isArray(data) || data.length === 0) throw new Error('FMP sin datos');
 
-    // 1. Precio en tiempo real (mercado abierto)
-    const live = meta?.regularMarketPrice;
-    // 2. Último cierre disponible (mercado cerrado o fines de semana)
-    const prevClose = meta?.chartPreviousClose ?? meta?.previousClose;
-    // 3. Último dato de la serie histórica (fallback extra)
-    const quotes    = result?.indicators?.quote?.[0]?.close ?? [];
-    const lastClose = quotes.filter(Boolean).at(-1);
-
-    const price = live || prevClose || lastClose;
-    if(!price) throw new Error('Sin precio en respuesta');
-    return price;
-
+    const result = {};
+    data.forEach(q => {
+      const price = q.price ?? q.previousClose;
+      if(price){
+        result[q.symbol] = price;
+        saveCache(q.symbol, price); // guardar en caché siempre que sea exitoso
+      }
+    });
+    return result;
   } catch(e){
-    console.warn(`Yahoo ${ticker} falló:`, e.message);
-    try {
-      const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
-      const d2   = await corsGet(url2);
-      const result2 = d2?.chart?.result?.[0];
-      const meta2   = result2?.meta;
-      const live2   = meta2?.regularMarketPrice;
-      const prev2   = meta2?.chartPreviousClose ?? meta2?.previousClose;
-      const quotes2 = result2?.indicators?.quote?.[0]?.close ?? [];
-      const last2   = quotes2.filter(Boolean).at(-1);
-      const price2  = live2 || prev2 || last2;
-      if(!price2) throw new Error('Sin precio (query2)');
-      return price2;
-    } catch(e2){
-      console.warn(`Yahoo ${ticker} query2 también falló:`, e2.message);
-      return null;
-    }
+    console.warn('FMP falló:', e.message);
+    return null;
   }
 }
 
@@ -821,17 +820,25 @@ async function refreshAll(){
   // 1. Fetch TC
   const tc = await fetchTC();
 
-  // 2. Fetch stocks in parallel
+  // 2. Fetch stocks — FMP batch (1 sola llamada para todos los tickers)
   const tickers = ACCIONES.map(a=>a.ticker);
-  const stockResults = await Promise.allSettled(tickers.map(t => fetchStockPrice(t)));
-  let accFailed = 0;
-  stockResults.forEach((res,i) => {
-    const ticker = tickers[i];
-    if(res.status === 'fulfilled' && res.value !== null){
-      accPrices[ticker] = res.value;
+  const fmpData = await fetchAllStockPrices(tickers);
+  let accFailed = 0, accCached = 0;
+
+  tickers.forEach(ticker => {
+    if(fmpData && fmpData[ticker]){
+      accPrices[ticker] = fmpData[ticker];
     } else {
-      accFailed++;
-      if(!accPrices[ticker]) accPrices[ticker] = null;
+      // Fallback: caché localStorage
+      const cached = loadCache(ticker);
+      if(cached){
+        accPrices[ticker] = cached.price;
+        accCached++;
+        console.info(`${ticker}: caché (${cached.age} min)`);
+      } else {
+        accPrices[ticker] = null;
+        accFailed++;
+      }
     }
   });
 
@@ -864,20 +871,23 @@ async function refreshAll(){
 
   document.getElementById('acc-ts').textContent = `⏱ ${tsNow}`;
   document.getElementById('acc-tc').textContent = tcStr;
-  document.getElementById('acc-footer-tc').textContent = `${tcStr} · Yahoo Finance + Frankfurter`;
+  document.getElementById('acc-footer-tc').textContent = `${tcStr} · FMP + Frankfurter`;
 
   document.getElementById('cry-ts').textContent = `⏱ ${tsNow}`;
   document.getElementById('cry-tc').textContent = tcStr;
   document.getElementById('cry-footer-tc').textContent = `${tcStr} · CoinGecko + Frankfurter`;
 
-  if(accFailed === 0){
+  if(accFailed === 0 && accCached === 0){
     setStatus('acc-status','ok', isMktOpen() ? '✓ Live' : '✓ Último cierre');
+    accStale = false;
+  } else if(accFailed === 0 && accCached > 0){
+    setStatus('acc-status','warn',`⚠ ${accCached} desde caché`);
     accStale = false;
   } else if(accFailed < tickers.length){
     setStatus('acc-status','warn',`⚠ ${accFailed} sin precio`);
     accStale = true;
   } else {
-    setStatus('acc-status','err','✗ Sin datos (caché)');
+    setStatus('acc-status','err','✗ Sin datos');
     accStale = true;
   }
 
