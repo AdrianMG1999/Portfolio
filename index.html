@@ -241,7 +241,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="htitle">Portafolio Acciones</div>
       <div class="hsub">Actinver · 14 posiciones · Precios en tiempo real</div>
     </div>
-    <div class="live"><span class="live-dot"></span>Yahoo Finance</div>
+    <div class="live"><span class="live-dot"></span>Fin. Modeling Prep</div>
   </div>
 
   <!-- SUMMARY METRICS -->
@@ -328,7 +328,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 
   <div class="rfbar">
-    <div class="rft" id="acc-footer-tc">Frankfurter API · Yahoo Finance API</div>
+    <div class="rft" id="acc-footer-tc">Fin. Modeling Prep · Frankfurter API</div>
   </div>
 
 </div><!-- /pane-acciones -->
@@ -544,29 +544,32 @@ async function fetchTC(){
 // ─── FETCH STOCK PRICES (Financial Modeling Prep) ────────────────────────────
 const FMP_KEY = '7iyz6kZifeKtzXVBbAdueuXi3SokCDbm';
 
-async function fetchAllStockPrices(tickers){
-  // FMP batch: todos los tickers en 1 sola llamada 🔥
-  const symbols = tickers.join(',');
-  const url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${FMP_KEY}`;
-  try {
-    const r = await fetch(url);
-    if(!r.ok) throw new Error('FMP HTTP '+r.status);
-    const data = await r.json();
-    if(!Array.isArray(data) || data.length === 0) throw new Error('FMP sin datos');
+async function fetchOneFMP(ticker){
+  const url = `https://financialmodelingprep.com/api/v3/quote/${ticker}?apikey=${FMP_KEY}`;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const data = await r.json();
+  if(!Array.isArray(data) || data.length === 0) throw new Error('Sin datos');
+  const price = data[0].price ?? data[0].previousClose;
+  if(!price) throw new Error('Sin precio en respuesta');
+  return price;
+}
 
-    const result = {};
-    data.forEach(q => {
-      const price = q.price ?? q.previousClose;
-      if(price){
-        result[q.symbol] = price;
-        saveCache(q.symbol, price); // guardar en caché siempre que sea exitoso
-      }
-    });
-    return result;
-  } catch(e){
-    console.warn('FMP falló:', e.message);
-    return null;
-  }
+async function fetchAllStockPrices(tickers){
+  // Llamadas individuales en paralelo — compatible con plan free de FMP
+  const results = await Promise.allSettled(tickers.map(t => fetchOneFMP(t)));
+  const priceMap = {};
+  results.forEach((res, i) => {
+    const ticker = tickers[i];
+    if(res.status === 'fulfilled'){
+      priceMap[ticker] = res.value;
+      saveCache(ticker, res.value);
+    } else {
+      console.warn(`FMP ${ticker}:`, res.reason?.message);
+      priceMap[ticker] = null;
+    }
+  });
+  return priceMap;
 }
 
 // ─── FETCH CRYPTO PRICES (CoinGecko vía allorigins) ─────────────────────────
@@ -826,7 +829,7 @@ async function refreshAll(){
   let accFailed = 0, accCached = 0;
 
   tickers.forEach(ticker => {
-    if(fmpData && fmpData[ticker]){
+    if(fmpData[ticker] !== null && fmpData[ticker] !== undefined){
       accPrices[ticker] = fmpData[ticker];
     } else {
       // Fallback: caché localStorage
