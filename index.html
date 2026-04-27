@@ -541,58 +541,55 @@ async function fetchTC(){
   }
 }
 
-// ─── FETCH STOCK PRICES (Financial Modeling Prep · stable API) ───────────────
+// ─── FETCH STOCK PRICES — IF por ticker: FMP → Yahoo → Caché ─────────────────
 const FMP_KEY = '7iyz6kZifeKtzXVBbAdueuXi3SokCDbm';
 
-async function fetchAllStockPrices(tickers){
-  // Batch en 1 sola llamada con el endpoint stable de FMP
-  const symbols = tickers.join(',');
-  const url = `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${FMP_KEY}`;
+async function fetchTicker(ticker){
+  // IF 1: FMP
   try {
-    const r = await fetch(url, {signal: AbortSignal.timeout(10000)});
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    if(!Array.isArray(data) || data.length === 0) throw new Error('Respuesta vacía');
+    const r = await fetch(
+      `https://financialmodelingprep.com/stable/quote?symbol=${ticker}&apikey=${FMP_KEY}`,
+      {signal: AbortSignal.timeout(8000)}
+    );
+    if(r.ok){
+      const data = await r.json();
+      const price = data?.[0]?.price ?? data?.[0]?.previousClose;
+      if(price){ saveCache(ticker, price); return price; }
+    }
+  } catch(e){ console.warn(`FMP ${ticker}:`, e.message); }
 
-    const priceMap = {};
-    // Inicializar todos como null por si alguno no viene en la respuesta
-    tickers.forEach(t => priceMap[t] = null);
-    data.forEach(q => {
-      const price = q.price ?? q.previousClose;
-      if(q.symbol && price){
-        priceMap[q.symbol] = price;
-        saveCache(q.symbol, price);
-      }
-    });
-    return priceMap;
+  // IF 2: Yahoo Finance vía proxy
+  try {
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
+    const r = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
+    if(r.ok){
+      const wrapper = await r.json();
+      const d = JSON.parse(wrapper.contents);
+      const meta   = d?.chart?.result?.[0]?.meta;
+      const quotes = d?.chart?.result?.[0]?.indicators?.quote?.[0]?.close ?? [];
+      const price  = meta?.regularMarketPrice || meta?.chartPreviousClose
+                  || meta?.previousClose || quotes.filter(Boolean).at(-1);
+      if(price){ saveCache(ticker, price); return price; }
+    }
+  } catch(e){ console.warn(`Yahoo ${ticker}:`, e.message); }
 
-  } catch(e){
-    console.warn('FMP batch falló:', e.message);
-    // Si falla el batch, intentar uno por uno como fallback
-    const priceMap = {};
-    const results = await Promise.allSettled(tickers.map(async t => {
-      const r2 = await fetch(
-        `https://financialmodelingprep.com/stable/quote?symbol=${t}&apikey=${FMP_KEY}`,
-        {signal: AbortSignal.timeout(8000)}
-      );
-      if(!r2.ok) throw new Error('HTTP ' + r2.status);
-      const d2 = await r2.json();
-      const price = d2?.[0]?.price ?? d2?.[0]?.previousClose;
-      if(!price) throw new Error('Sin precio');
-      return {ticker: t, price};
-    }));
-    results.forEach((res, i) => {
-      const ticker = tickers[i];
-      if(res.status === 'fulfilled'){
-        priceMap[ticker] = res.value.price;
-        saveCache(ticker, res.value.price);
-      } else {
-        console.warn(`FMP ${ticker}:`, res.reason?.message);
-        priceMap[ticker] = null;
-      }
-    });
-    return priceMap;
-  }
+  // IF 3: Caché localStorage
+  const cached = loadCache(ticker);
+  if(cached){ console.info(`${ticker}: caché (${cached.age} min)`); return cached.price; }
+
+  // Sin datos
+  console.warn(`${ticker}: sin precio en ninguna fuente`);
+  return null;
+}
+
+async function fetchAllStockPrices(tickers){
+  const results = await Promise.allSettled(tickers.map(t => fetchTicker(t)));
+  const priceMap = {};
+  results.forEach((res, i) => {
+    priceMap[tickers[i]] = res.status === 'fulfilled' ? res.value : null;
+  });
+  return priceMap;
 }
 
 // ─── FETCH CRYPTO PRICES (CoinGecko vía allorigins) ─────────────────────────
