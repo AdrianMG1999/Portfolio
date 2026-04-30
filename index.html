@@ -253,7 +253,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="m"><div class="ml">En rojo</div><div class="mv r" id="sum-rojo">—</div></div>
   </div>
   <div style="margin-bottom:1.25rem">
-    <div class="m" style="border-color:rgba(22,168,90,.3);background:rgba(22,168,90,.04)"><div class="ml">Poder de compra total</div><div class="mv g">$73,059.63</div></div>
+    <div class="m" style="border-color:rgba(22,168,90,.3);background:rgba(22,168,90,.04)"><div class="ml">Poder de compra total</div><div class="mv g">$62,293.94</div></div>
   </div>
 
   <div class="sl">Posiciones activas — clic para ver detalle</div>
@@ -419,7 +419,7 @@ const ACCIONES = [
   { id:'amzn', ticker:'AMZN', nombre:'Amazon',          qty:3,  avgMXN:3590.00, tbClass:'tb-g', target:'~$260 USD',   upside:'~+14%',earnings:'01/May/2026 🔥',rec:'Hold' },
   { id:'avgo', ticker:'AVGO', nombre:'Broadcom',        qty:2,  avgMXN:5593.00, tbClass:'tb-g', target:'$465.00 USD', upside:'+10%', earnings:'04/Jun/2026', rec:'Hold' },
   { id:'meli', ticker:'MELI', nombre:'MercadoLibre',    qty:3,  avgMXN:29948.92,tbClass:'tb-g', target:'$2,725 USD',  upside:'+47%', earnings:'07/May/2026', rec:'Hold' },
-  { id:'meta', ticker:'META', nombre:'Meta Platforms',  qty:2,  avgMXN:10008.50,tbClass:'tb-g', target:'~$750 USD',   upside:'~+13%',earnings:'29/Abr/2026 🔥',rec:'Hold' },
+  { id:'meta', ticker:'META', nombre:'Meta Platforms',  qty:3,  avgMXN:10260.90,tbClass:'tb-g', target:'~$750 USD',   upside:'~+13%',earnings:'29/Abr/2026 🔥',rec:'Hold' },
   { id:'msft', ticker:'MSFT', nombre:'Microsoft',       qty:12, avgMXN:7056.83, tbClass:'tb-g', target:'$583.00 USD', upside:'+40%', earnings:'29/Abr/2026 🔥',rec:'Hold / BUY' },
   { id:'nu',   ticker:'NU',   nombre:'Nu Holdings',     qty:46, avgMXN:265.57,  tbClass:'tb-r', target:'~$16 USD',    upside:'~+10%',earnings:'13/May/2026', rec:'Hold' },
   { id:'orcl', ticker:'ORCL', nombre:'Oracle',          qty:14, avgMXN:3159.93, tbClass:'tb-r', target:'$246.00 USD', upside:'+34%', earnings:'Jun/2026',    rec:'Hold' },
@@ -798,7 +798,7 @@ function renderCryptoCards(tc){
   if(!visibleNums) document.querySelectorAll('.blurable').forEach(el=>el.style.filter='blur(7px)');
 }
 
-const PODER_COMPRA  = 73059.63;
+const PODER_COMPRA  = 62293.94;
 
 function updateGrandTotal(accValor){
   const accEl   = document.getElementById('banner-acc-total');
